@@ -1,75 +1,80 @@
-# React + TypeScript + Vite
+# Mercado Da Moeda
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicação web para acompanhar as principais criptomoedas, consultar preços e visualizar variações do mercado. Os valores podem ser exibidos em reais (BRL) ou dólares (USD), com dados fornecidos pela API da CoinCap.
 
-Currently, two official plugins are available:
+## Objetivo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Este projeto foi criado para praticar TypeScript com React e aplicar conceitos de Clean Architecture em uma aplicação frontend. A organização separa as regras da aplicação, os modelos do domínio, a integração com serviços externos e a interface, facilitando o entendimento e a evolução do código.
 
-## React Compiler
+## Tecnologias
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- TypeScript
+- Vite
+- Axios
+- API da CoinCap
 
-## Expanding the ESLint configuration
+## Como executar
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Instale as dependências:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+   ```bash
+   npm install
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+2. Crie um arquivo `.env` na raiz do projeto e configure sua chave da CoinCap:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+   ```env
+   VITE_API_KEY=sua_chave_da_coincap
+   ```
 
+3. Inicie o servidor de desenvolvimento:
+
+   ```bash
+   npm run dev
+   ```
+
+Para verificar o build de produção e executar o lint:
+
+```bash
+npm run build
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Organização do projeto
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+src/
+├── app/
+│   └── container.ts
+├── application/
+│   └── useCases/
+├── domain/
+│   ├── entities/
+│   └── repositories/
+├── infrastructure/
+│   ├── api/
+│   ├── mappers/
+│   └── repositories/
+└── presentarion/
+    ├── hooks/
+    ├── pages/
+    └── utils/
 ```
+
+- **`domain`**: contém a entidade `Crypto` e o contrato `CryptoRepository`, que define as operações de acesso aos dados sem depender de uma API específica.
+- **`application`**: contém os casos de uso `GetCryptos` e `GetCryptoById`. Eles recebem o contrato do repositório e executam as operações da aplicação.
+- **`infrastructure`**: implementa a comunicação com a CoinCap usando Axios, adapta os dados recebidos com `CoinCapCryptoMapper` e implementa o repositório definido pelo domínio.
+- **`app`**: instancia as implementações e conecta os casos de uso às dependências concretas.
+- **`presentarion`**: contém a tela, o hook que carrega os dados e utilitários de apresentação, como a formatação de valores. O nome da pasta mantém a grafia usada atualmente no projeto.
+
+## Fluxo do projeto
+
+1. `main.tsx` monta a aplicação React, que renderiza `App` e a página `Home`.
+2. `Home` usa o hook `useCryptos`, responsável por buscar a lista de criptomoedas e a cotação do dólar para real.
+3. O hook chama `GetCryptos` disponibilizado pelo container. O caso de uso solicita os dados ao contrato `CryptoRepository`.
+4. `CoinCapRepository` implementa esse contrato e chama `CoinCapApi`, que consulta os endpoints da CoinCap.
+5. A resposta da API chega no formato DTO; `CoinCapCryptoMapper` converte seus campos para a entidade `Crypto` usada pelo restante da aplicação.
+6. Os dados retornam ao hook e à tela, onde podem ser filtrados por nome ou símbolo e formatados em BRL ou USD.
+
+O caso de uso `GetCryptoById` também está disponível para buscar um criptoativo individual, embora não esteja conectado à tela atual.
